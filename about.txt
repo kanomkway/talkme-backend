@@ -1,0 +1,15 @@
+
+Connect to MySQL
+host: "localhost",
+user: "root",
+password: "123456",
+port: "3306",
+database: "talkme",
+
+--------------------------
+
+Docker Container
+name: project-talkme
+port: 3306:3306
+
+--------------------------
