@@ -38,11 +38,11 @@ con.connect(function (err) {
 app.get("/", (req, res) => {
   const query = `
     SELECT * FROM (
-      SELECT * FROM tag_general
+      SELECT * FROM general
       UNION ALL
-      SELECT * FROM tag_food
+      SELECT * FROM food
       UNION ALL
-      SELECT * FROM tag_music
+      SELECT * FROM music
     ) AS combined_table
     ORDER BY id DESC
   `;
