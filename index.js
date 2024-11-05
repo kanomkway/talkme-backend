@@ -35,7 +35,21 @@ con.connect(function (err) {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  const query = `
+    SELECT * FROM (
+      SELECT * FROM tag_general
+      UNION ALL
+      SELECT * FROM tag_food
+      UNION ALL
+      SELECT * FROM tag_music
+    ) AS combined_table
+    ORDER BY id DESC
+  `;
+  con.query(query, function (err, result, fields) {
+    if (err) throw res.status(400).send("No products found");
+    console.log(result);
+    res.send(result);
+  });
 });
 
 app.get("/api", (req, res) => {
