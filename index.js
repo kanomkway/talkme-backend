@@ -25,10 +25,13 @@ var con = mysql.createConnection({
   password: "123456",
   port: "3306",
   database: "talkme",
+  connectTimeout: 30000, // ตั้งค่า timeout เป็น 30 วินาที
+  acquireTimeout: 30000,
 });
 
 con.connect(function (err) {
   if (err) throw err;
+  console.log("Connected to database");
 });
 
 app.get("/", (req, res) => {
@@ -39,9 +42,80 @@ app.get("/api", (req, res) => {
   res.send("Welcome to API");
 });
 
+app.get("/api/user", (req, res) => {
+  con.query("SELECT * FROM user", function (err, result, fields) {
+    if (err) throw res.status(400).send("No user found");
+    console.log(result);
+    res.send(result);
+  });
+});
+
+app.post("/api/adduser", (req, res) => {
+  const { username, password } = req.body;
+  console.log("Received:", { username, password });
+
+  const checkUserQuery = "SELECT * FROM talkme.user WHERE username = ?";
+  con.query(checkUserQuery, [username], (err, results) => {
+    if (err) {
+      console.error("Error checking user:", err);
+      return res
+        .status(500)
+        .json({ message: "เกิดข้อผิดพลาดในการตรวจสอบข้อมูล" });
+    }
+
+    // ถ้า username มีอยู่แล้ว
+    if (results.length > 0) {
+      return res.status(400).json({
+        message: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่อผู้ใช้อื่น",
+      });
+    }
+
+    // ถ้า username ยังไม่มีอยู่ในฐานข้อมูล
+    const insertUserQuery =
+      "INSERT INTO talkme.user (username, password) VALUES (?, ?)";
+    con.query(insertUserQuery, [username, password], (err, results) => {
+      if (err) {
+        console.error("Error inserting user:", err);
+        return res.status(500).json({ message: "ไม่สามารถเพิ่มข้อมูลได้" });
+      }
+
+      return res.status(200).json({ message: "เพิ่มข้อมูลสำเร็จ!" });
+    });
+  });
+});
+
+// con.query(
+//   `INSERT INTO user (username, password) VALUES ('${username}', '${password}')`,
+//   function (err, result, fields) {
+//     if (err) {
+//       // throw res.status(400).send(`Error. Cannot add user.`);
+//       return res.status(500).json({ message: "Error. Cannot add user." });
+//     } else {
+//       console.log(result);
+//       res.send(result);
+//       res.status(200).json({ message: "เพิ่มข้อมูลสำเร็จ!" });
+//     }
+//   }
+// );
+
+app.post("/api/addto/:category", (req, res) => {
+  const { title, content } = req.body;
+  const category = req.params.category;
+  console.log("Received:", { title, category, content });
+
+  const query = `INSERT INTO ?? (title, content) VALUES (?, ?)`;
+  con.query(query, [category, title, content], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "ไม่สามารถเพิ่มข้อมูลได้" });
+    }
+    return res.status(200).json({ message: "เพิ่มข้อมูลสำเร็จ!" });
+  });
+});
+
 app.get("/api/general", (req, res) => {
   con.query("SELECT * FROM tag_general", function (err, result, fields) {
-    if (err) throw res.status(400).send("No products found");
+    if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
   });
@@ -65,7 +139,7 @@ app.get("/api/general/:id", (req, res) => {
 
 app.get("/api/food", (req, res) => {
   con.query("SELECT * FROM tag_food", function (err, result, fields) {
-    if (err) throw res.status(400).send("No products found");
+    if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
   });
@@ -89,7 +163,7 @@ app.get("/api/food/:id", (req, res) => {
 
 app.get("/api/music", (req, res) => {
   con.query("SELECT * FROM tag_music", function (err, result, fields) {
-    if (err) throw res.status(400).send("No products found");
+    if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
   });
@@ -119,7 +193,7 @@ app.post("/api/addcomment", (req, res) => {
   con.query(
     `INSERT INTO comment (uid, tag, content) VALUES ('${uid}', '${tag}', '${content}')`,
     function (err, result, fields) {
-      if (err) throw res.status(400).send(`Error. Cannot add product.`);
+      if (err) throw res.status(400).send(`Error. Cannot add comment.`);
       else {
         console.log(result);
         res.send(result);
