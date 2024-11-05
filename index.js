@@ -211,12 +211,12 @@ app.put("/api/updateuser/:username", (req, res) => {
 });
 
 app.post("/api/addto/:category", (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, username } = req.body;
   const category = req.params.category;
-  console.log("Received:", { title, category, content });
+  console.log("Received:", { title, category, content, username });
 
-  const query = `INSERT INTO ?? (title, content) VALUES (?, ?)`;
-  con.query(query, [category, title, content], (err, result) => {
+  const query = `INSERT INTO ?? (title, content, username) VALUES (?, ?, ?)`;
+  con.query(query, [category, title, content, username], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ message: "ไม่สามารถเพิ่มข้อมูลได้" });
