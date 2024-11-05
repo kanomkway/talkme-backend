@@ -113,8 +113,25 @@ app.post("/api/addto/:category", (req, res) => {
   });
 });
 
+app.delete("/api/delete/:category/:id", (req, res) => {
+  const { category, id } = req.params;
+  try {
+    const query = `DELETE FROM ?? WHERE id = ?`;
+    con.query(query, [category, id], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "ไม่สามารถลบโพสต์ได้" });
+      }
+      res.status(200).json({ message: "ลบโพสต์สำเร็จ!" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการเชื่อมต่อ" });
+  }
+});
+
 app.get("/api/general", (req, res) => {
-  con.query("SELECT * FROM tag_general", function (err, result, fields) {
+  con.query("SELECT * FROM general", function (err, result, fields) {
     if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
@@ -124,7 +141,7 @@ app.get("/api/general", (req, res) => {
 app.get("/api/general/:id", (req, res) => {
   const id = req.params.id;
   con.query(
-    `SELECT * FROM tag_general where id=${id}`,
+    `SELECT * FROM general where id=${id}`,
     function (err, result, fields) {
       if (err) throw err;
       if (result.length == 0)
@@ -138,7 +155,7 @@ app.get("/api/general/:id", (req, res) => {
 });
 
 app.get("/api/food", (req, res) => {
-  con.query("SELECT * FROM tag_food", function (err, result, fields) {
+  con.query("SELECT * FROM food", function (err, result, fields) {
     if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
@@ -148,7 +165,7 @@ app.get("/api/food", (req, res) => {
 app.get("/api/food/:id", (req, res) => {
   const id = req.params.id;
   con.query(
-    `SELECT * FROM tag_food where id=${id}`,
+    `SELECT * FROM food where id=${id}`,
     function (err, result, fields) {
       if (err) throw err;
       if (result.length == 0)
@@ -162,7 +179,7 @@ app.get("/api/food/:id", (req, res) => {
 });
 
 app.get("/api/music", (req, res) => {
-  con.query("SELECT * FROM tag_music", function (err, result, fields) {
+  con.query("SELECT * FROM music", function (err, result, fields) {
     if (err) throw res.status(400).send("No content found");
     console.log(result);
     res.send(result);
@@ -172,7 +189,7 @@ app.get("/api/music", (req, res) => {
 app.get("/api/music/:id", (req, res) => {
   const id = req.params.id;
   con.query(
-    `SELECT * FROM tag_music where id=${id}`,
+    `SELECT * FROM music where id=${id}`,
     function (err, result, fields) {
       if (err) throw err;
       if (result.length == 0)
