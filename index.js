@@ -141,19 +141,74 @@ app.post("/api/adduser", (req, res) => {
   });
 });
 
-// con.query(
-//   `INSERT INTO user (username, password) VALUES ('${username}', '${password}')`,
-//   function (err, result, fields) {
-//     if (err) {
-//       // throw res.status(400).send(`Error. Cannot add user.`);
-//       return res.status(500).json({ message: "Error. Cannot add user." });
-//     } else {
-//       console.log(result);
-//       res.send(result);
-//       res.status(200).json({ message: "เพิ่มข้อมูลสำเร็จ!" });
-//     }
-//   }
-// );
+app.put("/api/updateuser/:username", (req, res) => {
+  const oldUsername = req.body.oldUsername;
+  const newUsername = req.body.newUsername;
+  const password = req.body.password;
+  console.log(
+    "Updating from ",
+    oldUsername,
+    " to ",
+    newUsername,
+    " with password: ",
+    password
+  );
+  if (oldUsername === newUsername) {
+    con.query(
+      `UPDATE user SET password = ? WHERE username = ?`,
+      [password, oldUsername],
+      (err, result) => {
+        if (err) {
+          console.error("Error updating user:", err);
+          return res.status(400).send("Error, cannot update user");
+        }
+
+        // ตรวจสอบว่าการอัปเดตสำเร็จหรือไม่
+        if (result.affectedRows > 0) {
+          res.send({ message: "Updated successfully", status: "ok" });
+        } else {
+          res.status(404).send("User not found for update");
+        }
+      }
+    );
+  } else {
+    // ถ้า newUsername ไม่เหมือนกับ oldUsername, ตรวจสอบว่า newUsername มีในระบบแล้วหรือไม่
+    con.query(
+      "SELECT * FROM user WHERE username = ?",
+      [newUsername],
+      (err, results) => {
+        if (err) {
+          console.error("Error checking username:", err);
+          return res.status(500).send("Server error");
+        }
+
+        // ถ้า username ใหม่มีอยู่ในฐานข้อมูล
+        if (results.length > 0) {
+          return res.status(400).send("Username already exists");
+        }
+
+        // ถ้า username ใหม่ไม่ซ้ำกัน, อัปเดต username และ password
+        con.query(
+          `UPDATE user SET username = ?, password = ? WHERE username = ?`,
+          [newUsername, password, oldUsername],
+          (err, result) => {
+            if (err) {
+              console.error("Error updating user:", err);
+              return res.status(400).send("Error, cannot update user");
+            }
+
+            // ตรวจสอบว่าการอัปเดตสำเร็จหรือไม่
+            if (result.affectedRows > 0) {
+              res.send({ message: "User updated successfully", status: "ok" });
+            } else {
+              res.status(404).send("User not found for update");
+            }
+          }
+        );
+      }
+    );
+  }
+});
 
 app.post("/api/addto/:category", (req, res) => {
   const { title, content } = req.body;
@@ -265,21 +320,25 @@ app.get("/content", (req, res) => {
   const id = req.query.id;
 
   console.log("Received:", { id, tag });
-  con.query("SELECT * FROM comment where tag =? AND idp =?",[tag,id], function (err, result, fields) {
-    if (err) {
-      return res.status(400).send("No user found");
+  con.query(
+    "SELECT * FROM comment where tag =? AND idp =?",
+    [tag, id],
+    function (err, result, fields) {
+      if (err) {
+        return res.status(400).send("No user found");
+      }
+      console.log(result);
+      res.send(result);
     }
-    console.log(result);
-    res.send(result);
-  });  
+  );
 });
 
 app.post("/api/addcomment", (req, res) => {
-  const { id, tag,info } = req.body;
-  console.log("Received:", { id,tag,info });
+  const { id, tag, info } = req.body;
+  console.log("Received:", { id, tag, info });
 
   const query = `INSERT INTO comment (idp, tag,info) VALUES (?,?,?)`;
-  con.query(query, [id, tag,info], (err, result) => {
+  con.query(query, [id, tag, info], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ message: "ไม่สามารถเพิ่มข้อมูลได้" });
