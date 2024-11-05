@@ -3,6 +3,7 @@ const router = express.Router();
 const app = express();
 const port = 5000;
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const mysql = require("mysql2");
 // const mysql = require("mysql");
 
@@ -17,6 +18,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Methods", "GET-POST-PUT-DELETE");
   next();
 });
+app.use(cors());
 app.use(express.json());
 
 var con = mysql.createConnection({
@@ -26,11 +28,10 @@ var con = mysql.createConnection({
   port: "3306",
   database: "talkme",
   connectTimeout: 30000, // ตั้งค่า timeout เป็น 30 วินาที
-  acquireTimeout: 30000,
 });
 
 con.connect(function (err) {
-  if (err) throw err;
+  if (err) return err;
   console.log("Connected to database");
 });
 
@@ -46,7 +47,7 @@ app.get("/", (req, res) => {
     ORDER BY id DESC
   `;
   con.query(query, function (err, result, fields) {
-    if (err) throw res.status(400).send("No products found");
+    if (err) return res.status(400).send("No products found");
     console.log(result);
     res.send(result);
   });
@@ -58,7 +59,9 @@ app.get("/api", (req, res) => {
 
 app.get("/api/user", (req, res) => {
   con.query("SELECT * FROM user", function (err, result, fields) {
-    if (err) throw res.status(400).send("No user found");
+    if (err) {
+      return res.status(400).send("No user found");
+    }
     console.log(result);
     res.send(result);
   });
@@ -129,18 +132,19 @@ app.post("/api/addto/:category", (req, res) => {
 
 app.delete("/api/delete/:category/:id", (req, res) => {
   const { category, id } = req.params;
+  console.log(category, id);
   try {
     const query = `DELETE FROM ?? WHERE id = ?`;
     con.query(query, [category, id], (err, result) => {
       if (err) {
         console.error(err);
-        return res.status(500).json({ message: "ไม่สามารถลบโพสต์ได้" });
+        return res.status(500).json({ message: "Cannot delete post." });
       }
-      res.status(200).json({ message: "ลบโพสต์สำเร็จ!" });
+      res.status(200).json({ message: "Deleted post successfully!" });
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการเชื่อมต่อ" });
+    res.status(500).json({ message: "connection error" });
   }
 });
 
@@ -157,9 +161,9 @@ app.get("/api/general/:id", (req, res) => {
   con.query(
     `SELECT * FROM general where id=${id}`,
     function (err, result, fields) {
-      if (err) throw err;
+      if (err) return err;
       if (result.length == 0)
-        res.status(400).send(`No content id: ${id} found`);
+        return res.status(400).send(`No content id: ${id} found`);
       else {
         console.log(result);
         res.send(result);
@@ -170,7 +174,7 @@ app.get("/api/general/:id", (req, res) => {
 
 app.get("/api/food", (req, res) => {
   con.query("SELECT * FROM food", function (err, result, fields) {
-    if (err) throw res.status(400).send("No content found");
+    if (err) return res.status(400).send("No content found");
     console.log(result);
     res.send(result);
   });
@@ -194,7 +198,7 @@ app.get("/api/food/:id", (req, res) => {
 
 app.get("/api/music", (req, res) => {
   con.query("SELECT * FROM music", function (err, result, fields) {
-    if (err) throw res.status(400).send("No content found");
+    if (err) return res.status(400).send("No content found");
     console.log(result);
     res.send(result);
   });
@@ -205,7 +209,7 @@ app.get("/api/music/:id", (req, res) => {
   con.query(
     `SELECT * FROM music where id=${id}`,
     function (err, result, fields) {
-      if (err) throw err;
+      if (err) return err;
       if (result.length == 0)
         res.status(400).send(`No content id: ${id} found`);
       else {
@@ -224,7 +228,7 @@ app.post("/api/addcomment", (req, res) => {
   con.query(
     `INSERT INTO comment (uid, tag, content) VALUES ('${uid}', '${tag}', '${content}')`,
     function (err, result, fields) {
-      if (err) throw res.status(400).send(`Error. Cannot add comment.`);
+      if (err) return res.status(400).send(`Error. Cannot add comment.`);
       else {
         console.log(result);
         res.send(result);
