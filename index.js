@@ -57,6 +57,46 @@ app.get("/api", (req, res) => {
   res.send("Welcome to API");
 });
 
+app.get("/api/search", (req, res) => {
+  const query = req.query.query; // รับพารามิเตอร์ 'query' จาก URL
+  if (!query) {
+    return res.status(400).send("Query parameter is missing");
+  }
+
+  // Query สำหรับการค้นหาในตาราง tag_general, tag_food และ tag_music
+  const searchQuery = `
+    SELECT * FROM (
+      SELECT * FROM general WHERE title LIKE ? OR content LIKE ?
+      UNION ALL
+      SELECT * FROM food WHERE title LIKE ? OR content LIKE ?
+      UNION ALL
+      SELECT * FROM music WHERE title LIKE ? OR content LIKE ?
+    ) AS combined_table
+    ORDER BY id DESC
+  `;
+
+  const searchParam = `%${query}%`;
+
+  con.query(
+    searchQuery,
+    [
+      searchParam,
+      searchParam,
+      searchParam,
+      searchParam,
+      searchParam,
+      searchParam,
+    ],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "ไม่สามารถทำการค้นหาได้" });
+      }
+      res.json(results || []);
+    }
+  );
+});
+
 app.get("/api/user", (req, res) => {
   con.query("SELECT * FROM user", function (err, result, fields) {
     if (err) {
