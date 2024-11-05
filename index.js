@@ -260,21 +260,32 @@ app.get("/api/music/:id", (req, res) => {
   );
 });
 
-app.post("/api/addcomment", (req, res) => {
-  const uid = req.body.uid;
-  const tag = req.body.tag;
-  const content = req.body.content;
-  console.log(uid, tag, content);
-  con.query(
-    `INSERT INTO comment (uid, tag, content) VALUES ('${uid}', '${tag}', '${content}')`,
-    function (err, result, fields) {
-      if (err) return res.status(400).send(`Error. Cannot add comment.`);
-      else {
-        console.log(result);
-        res.send(result);
-      }
+app.get("/content", (req, res) => {
+  const tag = req.query.tag;
+  const id = req.query.id;
+
+  console.log("Received:", { id, tag });
+  con.query("SELECT * FROM comment where tag =? AND idp =?",[tag,id], function (err, result, fields) {
+    if (err) {
+      return res.status(400).send("No user found");
     }
-  );
+    console.log(result);
+    res.send(result);
+  });  
+});
+
+app.post("/api/addcomment", (req, res) => {
+  const { id, tag,info } = req.body;
+  console.log("Received:", { id,tag,info });
+
+  const query = `INSERT INTO comment (idp, tag,info) VALUES (?,?,?)`;
+  con.query(query, [id, tag,info], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "ไม่สามารถเพิ่มข้อมูลได้" });
+    }
+    return res.status(200).json({ message: "เพิ่มข้อมูลสำเร็จ!" });
+  });
 });
 
 app.listen(port, () => {
